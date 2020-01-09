@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -147,12 +148,26 @@ public class LuckMoney implements IPlugin {
             return;
         }
 
+//        Log.d("ljx", "handleLuckyMoney " + contentValues.toString());
         int status = contentValues.getAsInteger("status");
         if (status == 4) {
             return;
         }
 
+        String content = contentValues.getAsString("content");
+        if (TextUtils.isEmpty(content)) {
+            return;
+        }
+
         String talker = contentValues.getAsString("talker");
+        boolean isChatroom = false;
+        if (!TextUtils.isEmpty(talker) && talker.endsWith("@chatroom")) {
+            isChatroom = true;
+            int endIndex = content.indexOf(":");
+            talker = content.substring(0, endIndex);
+        }
+//        Log.d("ljx", "handleLuckyMoney: talker " + talker + ", isChatroom " + isChatroom);
+
 
         String blackList = PreferencesUtils.blackList();
         if (!isEmpty(blackList)) {
@@ -176,7 +191,6 @@ public class LuckMoney implements IPlugin {
             return;
         }
 
-        String content = contentValues.getAsString("content");
         if (!content.startsWith("<msg")) {
             content = content.substring(content.indexOf("<msg"));
         }
