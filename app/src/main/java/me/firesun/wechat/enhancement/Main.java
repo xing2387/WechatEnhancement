@@ -37,30 +37,31 @@ public class Main implements IXposedHookLoadPackage {
 
     @Override
     public void handleLoadPackage(final LoadPackageParam lpparam) {
-        if (lpparam.packageName.equals(HookParams.WECHAT_PACKAGE_NAME)) {
-            try {
-                XposedHelpers.findAndHookMethod(ContextWrapper.class, "attachBaseContext", Context.class, new XC_MethodHook() {
-                    @Override
-                    protected void afterHookedMethod(XC_MethodHook.MethodHookParam param) throws Throwable {
-                        super.afterHookedMethod(param);
-                        Context context = (Context) param.args[0];
-                        String processName = lpparam.processName;
-                        //Only hook important process
-                        if (!processName.equals(HookParams.WECHAT_PACKAGE_NAME) &&
-                                !processName.equals(HookParams.WECHAT_PACKAGE_NAME + ":tools")
-                                ) {
-                            return;
-                        }
-                        String versionName = getVersionName(context, HookParams.WECHAT_PACKAGE_NAME);
-                        log("Found wechat version:" + versionName);
-                        if (!HookParams.hasInstance()) {
-                            SearchClasses.init(context, lpparam, versionName);
-                            loadPlugins(lpparam);
-                        }
+        if (!lpparam.packageName.equals(HookParams.WECHAT_PACKAGE_NAME)) {
+            return;
+        }
+        try {
+            XposedHelpers.findAndHookMethod(ContextWrapper.class, "attachBaseContext", Context.class, new XC_MethodHook() {
+                @Override
+                protected void afterHookedMethod(XC_MethodHook.MethodHookParam param) throws Throwable {
+                    super.afterHookedMethod(param);
+                    Context context = (Context) param.args[0];
+                    String processName = lpparam.processName;
+                    //Only hook important process
+                    if (!processName.equals(HookParams.WECHAT_PACKAGE_NAME) &&
+                            !processName.equals(HookParams.WECHAT_PACKAGE_NAME + ":tools")
+                    ) {
+                        return;
                     }
-                });
-            } catch (Error | Exception e) {
-            }
+                    String versionName = getVersionName(context, HookParams.WECHAT_PACKAGE_NAME);
+                    log("Found wechat version:" + versionName);
+                    if (!HookParams.hasInstance()) {
+                        SearchClasses.init(context, lpparam, versionName);
+                        loadPlugins(lpparam);
+                    }
+                }
+            });
+        } catch (Error | Exception e) {
         }
     }
 

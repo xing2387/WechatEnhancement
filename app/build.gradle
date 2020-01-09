@@ -22,6 +22,7 @@ android {
     defaultConfig {
         applicationId "me.firesun.wechat.enhancement"
         minSdkVersion 17
+        //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 23
         versionCode 46
         versionName "1.9.1"
