@@ -119,13 +119,16 @@ public class LuckMoney implements IPlugin {
                         String wechatId = activity.getIntent().getStringExtra("Contact_User");
                         cmb.setText(wechatId);
                         Toast.makeText(activity, "微信ID:" + wechatId + "已复制到剪切板", LENGTH_LONG).show();
+//                        Log.e("ljx", "ContactInfoUIClassName: " + wechatId);
                     }
                 } catch (Error | Exception e) {
+                    Log.e("ljx", "ContactInfoUIClassName: ", e);
                 }
             }
         });
 
         XposedHelpers.findAndHookMethod(HookParams.getInstance().ChatroomInfoUIClassName, lpparam.classLoader, "onCreate", Bundle.class, new XC_MethodHook() {
+
             @Override
             protected void afterHookedMethod(MethodHookParam param) {
                 try {
@@ -135,8 +138,10 @@ public class LuckMoney implements IPlugin {
                         ClipboardManager cmb = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
                         cmb.setText(wechatId);
                         Toast.makeText(activity, "微信ID:" + wechatId + "已复制到剪切板", LENGTH_LONG).show();
+//                        Log.e("ljx", "ChatroomInfoUIClassName: " + wechatId);
                     }
                 } catch (Error | Exception e) {
+                    Log.e("ljx", "ChatroomInfoUIClassName: ", e);
                 }
             }
         });
@@ -160,11 +165,10 @@ public class LuckMoney implements IPlugin {
         }
 
         String talker = contentValues.getAsString("talker");
-        boolean isChatroom = false;
-        if (!TextUtils.isEmpty(talker) && talker.endsWith("@chatroom")) {
-            isChatroom = true;
-            int endIndex = content.indexOf(":");
-            talker = content.substring(0, endIndex);
+        String chatRoom = null;
+        if (isGroupTalk(talker)) {
+            chatRoom = String.valueOf(talker);
+            talker = content.substring(0, content.indexOf(":"));
         }
 //        Log.d("ljx", "handleLuckyMoney: talker " + talker + ", isChatroom " + isChatroom);
 
@@ -172,10 +176,19 @@ public class LuckMoney implements IPlugin {
         String blackList = PreferencesUtils.blackList();
         if (!isEmpty(blackList)) {
             for (String wechatId : blackList.split(",")) {
-                if (talker.equals(wechatId.trim())) {
+                wechatId = wechatId.trim();
+                if (talker.equals(wechatId)) {
+                    return;
+                }
+                if (!isEmpty(chatRoom) && chatRoom.equals(wechatId)) {
                     return;
                 }
             }
+        }
+
+        if (!TextUtils.isEmpty(chatRoom)) {
+            talker = String.valueOf(chatRoom);
+            chatRoom = null;
         }
 
         int isSend = contentValues.getAsInteger("isSend");
@@ -267,7 +280,7 @@ public class LuckMoney implements IPlugin {
     }
 
     private boolean isGroupTalk(String talker) {
-        return talker.endsWith("@chatroom");
+        return !TextUtils.isEmpty(talker) && talker.endsWith("@chatroom");
     }
 
 

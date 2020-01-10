@@ -44,6 +44,7 @@ public class SearchClasses {
         hp.versionName = versionName;
         hp.versionCode = HookParams.VERSION_CODE;
         int versionNum = getVersionNum(versionName);
+//        log("ljx " + "generateConfig: " + versionNum + " ,, 673=" + getVersionNum("6.7.3"));
         if (versionNum >= getVersionNum("6.5.6") && versionNum <= getVersionNum("6.5.23"))
             hp.LuckyMoneyReceiveUIClassName = "com.tencent.mm.plugin.luckymoney.ui.En_fba4b94f";
         if (versionNum < getVersionNum("6.5.8"))
@@ -52,8 +53,10 @@ public class SearchClasses {
             hp.hasTimingIdentifier = false;
         if (versionNum >= getVersionNum("7.0.0"))
             hp.LuckyMoneyReceiveUIClassName = "com.tencent.mm.plugin.luckymoney.ui.LuckyMoneyNotHookReceiveUI";
-        if (versionNum >= getVersionNum("7.0.0"))
+        if (versionNum >= getVersionNum("6.7.3")) {
             hp.ChatroomInfoUIClassName = "com.tencent.mm.chatroom.ui.ChatroomInfoUI";
+        }
+//        log("ljx " + "ChatroomInfoUIClassName: " + hp.ChatroomInfoUIClassName);
 
         ApkFile apkFile = null;
         try {
