@@ -29,6 +29,7 @@ import me.firesun.wechat.enhancement.util.XmlToJson;
 
 import static android.text.TextUtils.isEmpty;
 import static android.widget.Toast.LENGTH_LONG;
+import static de.robv.android.xposed.XposedBridge.log;
 import static de.robv.android.xposed.XposedHelpers.callMethod;
 import static de.robv.android.xposed.XposedHelpers.callStaticMethod;
 import static de.robv.android.xposed.XposedHelpers.findFirstFieldByExactType;
@@ -36,6 +37,8 @@ import static de.robv.android.xposed.XposedHelpers.newInstance;
 
 
 public class LuckMoney implements IPlugin {
+    private static final String TAG = "ljx";
+
     private static Object requestCaller;
     private static List<LuckyMoneyMessage> luckyMoneyMessages = new ArrayList<>();
 
@@ -109,23 +112,35 @@ public class LuckMoney implements IPlugin {
             }
         });
 
-        XposedHelpers.findAndHookMethod(HookParams.getInstance().ContactInfoUIClassName, lpparam.classLoader, "onCreate", Bundle.class, new XC_MethodHook() {
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) {
-                try {
-                    if (PreferencesUtils.showWechatId()) {
-                        Activity activity = (Activity) param.thisObject;
-                        ClipboardManager cmb = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
-                        String wechatId = activity.getIntent().getStringExtra("Contact_User");
-                        cmb.setText(wechatId);
-                        Toast.makeText(activity, "微信ID:" + wechatId + "已复制到剪切板", LENGTH_LONG).show();
-//                        Log.e("ljx", "ContactInfoUIClassName: " + wechatId);
+        Log.d(TAG, "findAndHookMethod: ContactInfoUI ");
+        XposedHelpers.findAndHookMethod("com.tencent.mm.plugin.profile.ui.ContactInfoUI",
+                lpparam.classLoader, "onCreate", Bundle.class, new XC_MethodHook() {
+                    @Override
+                    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                        Log.d(TAG, "ContactInfoUI beforeHookedMethod: ");
                     }
-                } catch (Error | Exception e) {
-                    Log.e("ljx", "ContactInfoUIClassName: ", e);
-                }
-            }
-        });
+
+                    @Override
+                    protected void afterHookedMethod(MethodHookParam param) {
+                        Log.d(TAG, "ContactInfoUI afterHookedMethod: ");
+                    }
+                });
+
+
+//                        try {
+//                            if (PreferencesUtils.showWechatId()) {
+//                                Activity activity = (Activity) param.thisObject;
+//                                ClipboardManager cmb = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
+//                                String wechatId = activity.getIntent().getStringExtra("Contact_User");
+//                                cmb.setText(wechatId);
+//                                Toast.makeText(activity, "微信ID:" + wechatId + "已复制到剪切板", LENGTH_LONG).show();
+////                        Log.e("ljx", "ContactInfoUIClassName: " + wechatId);
+//                            }
+//                        } catch (Error | Exception e) {
+//                            Log.e("ljx", "ContactInfoUIClassName: ", e);
+//                        }
+//                    }
+//                });
 
         XposedHelpers.findAndHookMethod(HookParams.getInstance().ChatroomInfoUIClassName, lpparam.classLoader, "onCreate", Bundle.class, new XC_MethodHook() {
 

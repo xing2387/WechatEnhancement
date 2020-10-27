@@ -10,7 +10,8 @@ public class HookParams {
     public String SQLiteDatabaseUpdateMethod = "updateWithOnConflict";
     public String SQLiteDatabaseInsertMethod = "insert";
     public String SQLiteDatabaseDeleteMethod = "delete";
-    public String ContactInfoUIClassName = "com.tencent.mm.plugin.profile.ui.ContactInfoUI";
+    public final String ContactInfoUIClassName = "com.tencent.mm.plugin.profile.ui.ContactInfoUI";
+                                          //com.tencent.mm.plugin.profile.ui.ContactInfoUI
 
     public String ContactInfoClassName;
     public String ChatroomInfoUIClassName = "com.tencent.mm.plugin.chatroom.ui.ChatroomInfoUI";
