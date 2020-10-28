@@ -48,6 +48,7 @@ public class Main implements IXposedHookLoadPackage {
             new LuckMoney(),
             new Limits(),
     };
+    private static XC_MethodHook.Unhook appCreateUnHook = null;
 
     @Override
     public void handleLoadPackage(final LoadPackageParam lpparam) {
@@ -64,7 +65,11 @@ public class Main implements IXposedHookLoadPackage {
 
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                    log("after inject ClassLoader: " + param.getResult());
+                    if (appCreateUnHook != null) {
+                        appCreateUnHook.unhook();
+                        appCreateUnHook = null;
+                    }
+                    log("doHook after inject ClassLoader: " + param.getResult());
                     Context context = (Context) param.args[0];
                     doHook(context, lpparam, (ClassLoader) param.getResult());
                 }
@@ -74,14 +79,18 @@ public class Main implements IXposedHookLoadPackage {
             Log.e(TAG, "NewClassLoaderInjector handleLoadPackage: ", e);
         }
 
-
-        XposedHelpers.findAndHookMethod(Instrumentation.class, "callApplicationOnCreate", Application.class, new XC_MethodHook() {
-            @Override
-            protected void afterHookedMethod(XC_MethodHook.MethodHookParam param) throws Throwable {
-                Context context = (Context) param.args[0];
-                doHook(context, lpparam, lpparam.classLoader);
-            }
-        });
+        if (appCreateUnHook != null) {
+            appCreateUnHook.unhook();
+        }
+        appCreateUnHook = XposedHelpers.findAndHookMethod(Instrumentation.class, "callApplicationOnCreate",
+                Application.class, new XC_MethodHook() {
+                    @Override
+                    protected void afterHookedMethod(XC_MethodHook.MethodHookParam param) throws Throwable {
+                        log("doHook  callApplicationOnCreate ClassLoader: " + lpparam.classLoader);
+                        Context context = (Context) param.args[0];
+                        doHook(context, lpparam, lpparam.classLoader);
+                    }
+                });
 
     }
 

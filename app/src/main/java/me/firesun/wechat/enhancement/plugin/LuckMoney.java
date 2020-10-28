@@ -45,33 +45,36 @@ public class LuckMoney implements IPlugin {
 
     @Override
     public void hook(final XC_LoadPackage.LoadPackageParam lpparam, final ClassLoader classLoader) {
+        log("\n\n\nLuckMoney hook " + classLoader + "\n\n\n");
         for (XC_MethodHook.Unhook unhook : unhookList) {
             unhook.unhook();
         }
         unhookList.clear();
 
-        XC_MethodHook.Unhook unhook = XposedHelpers.findAndHookMethod(HookParams.getInstance().SQLiteDatabaseClassName, classLoader, HookParams.getInstance().SQLiteDatabaseInsertMethod, String.class, String.class, ContentValues.class, new XC_MethodHook() {
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) {
-                try {
-                    ContentValues contentValues = (ContentValues) param.args[2];
-                    String tableName = (String) param.args[0];
-                    if (TextUtils.isEmpty(tableName) || !tableName.equals("message")) {
-                        return;
+        XC_MethodHook.Unhook unhook = XposedHelpers.findAndHookMethod(HookParams.getInstance().SQLiteDatabaseClassName,
+                classLoader, HookParams.getInstance().SQLiteDatabaseInsertMethod,
+                String.class, String.class, ContentValues.class, new XC_MethodHook() {
+                    @Override
+                    protected void afterHookedMethod(MethodHookParam param) {
+                        try {
+                            ContentValues contentValues = (ContentValues) param.args[2];
+                            String tableName = (String) param.args[0];
+                            if (TextUtils.isEmpty(tableName) || !tableName.equals("message")) {
+                                return;
+                            }
+                            Integer type = contentValues.getAsInteger("type");
+                            if (null == type) {
+                                return;
+                            }
+                            if (type == 436207665 || type == 469762097) {
+                                handleLuckyMoney(contentValues, lpparam, classLoader);
+                            } else if (type == 419430449) {
+                                handleTransfer(contentValues, lpparam, classLoader);
+                            }
+                        } catch (Error | Exception e) {
+                        }
                     }
-                    Integer type = contentValues.getAsInteger("type");
-                    if (null == type) {
-                        return;
-                    }
-                    if (type == 436207665 || type == 469762097) {
-                        handleLuckyMoney(contentValues, lpparam, classLoader);
-                    } else if (type == 419430449) {
-                        handleTransfer(contentValues, lpparam, classLoader);
-                    }
-                } catch (Error | Exception e) {
-                }
-            }
-        });
+                });
         unhookList.add(unhook);
 
         unhook = XposedHelpers.findAndHookMethod(HookParams.getInstance().ReceiveLuckyMoneyRequestClassName, classLoader, HookParams.getInstance().ReceiveLuckyMoneyRequestMethod, int.class, String.class, JSONObject.class, new XC_MethodHook() {
@@ -166,6 +169,9 @@ public class LuckMoney implements IPlugin {
         if (!PreferencesUtils.open()) {
             return;
         }
+//        if (contentValues != null) {
+//            log("红包数据:" + contentValues.toString());
+//        }
 
 //        Log.d("ljx", "handleLuckyMoney " + contentValues.toString());
         int status = contentValues.getAsInteger("status");
@@ -174,6 +180,7 @@ public class LuckMoney implements IPlugin {
         }
 
         String content = contentValues.getAsString("content");
+        log("handleLuckyMoney: TextUtils.isEmpty(content) " + TextUtils.isEmpty(content));
         if (TextUtils.isEmpty(content)) {
             return;
         }
@@ -191,9 +198,11 @@ public class LuckMoney implements IPlugin {
         if (!isEmpty(blackList)) {
             for (String wechatId : blackList.split(",")) {
                 wechatId = wechatId.trim();
+                log("handleLuckyMoney: talker.equals(wechatId) " + talker.equals(wechatId));
                 if (talker.equals(wechatId)) {
                     return;
                 }
+                log("handleLuckyMoney: !isEmpty(chatRoom) && chatRoom.equals(wechatId) " + (!isEmpty(chatRoom) && chatRoom.equals(wechatId)));
                 if (!isEmpty(chatRoom) && chatRoom.equals(wechatId)) {
                     return;
                 }
@@ -206,14 +215,17 @@ public class LuckMoney implements IPlugin {
         }
 
         int isSend = contentValues.getAsInteger("isSend");
+        log("handleLuckyMoney: (PreferencesUtils.notSelf() && isSend != 0) " + (PreferencesUtils.notSelf() && isSend != 0));
         if (PreferencesUtils.notSelf() && isSend != 0) {
             return;
         }
 
+        log("handleLuckyMoney: (PreferencesUtils.notWhisper() && !isGroupTalk(talker)) " + (PreferencesUtils.notWhisper() && !isGroupTalk(talker)));
         if (PreferencesUtils.notWhisper() && !isGroupTalk(talker)) {
             return;
         }
 
+        log("handleLuckyMoney: (!isGroupTalk(talker) && isSend != 0) " + (!isGroupTalk(talker) && isSend != 0));
         if (!isGroupTalk(talker) && isSend != 0) {
             return;
         }
@@ -222,6 +234,7 @@ public class LuckMoney implements IPlugin {
             content = content.substring(content.indexOf("<msg"));
         }
 
+        log("getJSONObject(\"wcpayinfo\")");
         JSONObject wcpayinfo = new XmlToJson.Builder(content).build()
                 .getJSONObject("msg").getJSONObject("appmsg").getJSONObject("wcpayinfo");
         String senderTitle = wcpayinfo.getString("sendertitle");
@@ -229,31 +242,36 @@ public class LuckMoney implements IPlugin {
         if (!isEmpty(notContainsWords)) {
             for (String word : notContainsWords.split(",")) {
                 if (senderTitle.contains(word)) {
+                    log("handleLuckyMoney: senderTitle.contains(word) return");
                     return;
                 }
             }
         }
 
+        log("wcpayinfo.getString(\"nativeurl\")");
         String nativeUrlString = wcpayinfo.getString("nativeurl");
         Uri nativeUrl = Uri.parse(nativeUrlString);
         int msgType = Integer.parseInt(nativeUrl.getQueryParameter("msgtype"));
         int channelId = Integer.parseInt(nativeUrl.getQueryParameter("channelid"));
         String sendId = nativeUrl.getQueryParameter("sendid");
 
+        log("findClass(HookParams.getInstance().NetworkRequestClassName " + classLoader);
         Class networkRequestClass = XposedHelpers.findClass(HookParams.getInstance().NetworkRequestClassName, classLoader);
         requestCaller = callStaticMethod(networkRequestClass, HookParams.getInstance().GetNetworkByModelMethod);
 
+        log("findClass(HookParams.getInstance().ReceiveLuckyMoneyRequestClassName");
         Class receiveLuckyMoneyRequestClass = XposedHelpers.findClass(HookParams.getInstance().ReceiveLuckyMoneyRequestClassName, classLoader);
         if (HookParams.getInstance().hasTimingIdentifier) {
             callMethod(requestCaller, HookParams.getInstance().RequestCallerMethod, newInstance(receiveLuckyMoneyRequestClass, channelId, sendId, nativeUrlString, 0, "v1.0"), 0);
             luckyMoneyMessages.add(new LuckyMoneyMessage(msgType, channelId, sendId, nativeUrlString, talker));
+            log("handleLuckyMoney: hasTimingIdentifier return");
             return;
         }
-
+        log("findClass(HookParams.getInstance().LuckyMoneyRequestClassName");
         Class luckyMoneyRequestClass = XposedHelpers.findClass(HookParams.getInstance().LuckyMoneyRequestClassName, classLoader);
         Object luckyMoneyRequest = newInstance(luckyMoneyRequestClass,
                 msgType, channelId, sendId, nativeUrlString, "", "", talker, "v1.0");
-
+        log("luckyMoneyRequest " + classLoader);
         callMethod(requestCaller, HookParams.getInstance().RequestCallerMethod, luckyMoneyRequest, getDelayTime());
     }
 
