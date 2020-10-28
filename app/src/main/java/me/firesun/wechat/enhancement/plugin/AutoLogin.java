@@ -5,6 +5,8 @@ import android.app.Activity;
 import android.widget.Button;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedHelpers;
@@ -14,9 +16,15 @@ import me.firesun.wechat.enhancement.util.HookParams;
 
 
 public class AutoLogin implements IPlugin {
+    private static final List<XC_MethodHook.Unhook> unhookList = new ArrayList<>();
+
     @Override
-    public void hook(XC_LoadPackage.LoadPackageParam lpparam) {
-        XposedHelpers.findAndHookMethod(android.app.Activity.class, "onStart", new XC_MethodHook() {
+    public void hook(final XC_LoadPackage.LoadPackageParam lpparam, final ClassLoader classLoader) {
+        for (XC_MethodHook.Unhook unhook : unhookList) {
+            unhook.unhook();
+        }
+        unhookList.clear();
+        XC_MethodHook.Unhook unhook = XposedHelpers.findAndHookMethod(android.app.Activity.class, "onStart", new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) {
                 try {
@@ -39,7 +47,7 @@ public class AutoLogin implements IPlugin {
                 }
             }
         });
-
+        unhookList.add(unhook);
     }
 
 }

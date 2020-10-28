@@ -29,10 +29,16 @@ import static de.robv.android.xposed.XposedBridge.log;
 
 
 public class Limits implements IPlugin {
-    @Override
-    public void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static final List<XC_MethodHook.Unhook> unhookList = new ArrayList<>();
 
-        XposedHelpers.findAndHookMethod(android.app.Activity.class, "onCreate", android.os.Bundle.class, new XC_MethodHook() {
+    @Override
+    public void hook(final XC_LoadPackage.LoadPackageParam lpparam, final ClassLoader classLoader) {
+        for (XC_MethodHook.Unhook unhook : unhookList) {
+            unhook.unhook();
+        }
+        unhookList.clear();
+
+        XC_MethodHook.Unhook unhook = XposedHelpers.findAndHookMethod(android.app.Activity.class, "onCreate", android.os.Bundle.class, new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) {
                 try {
@@ -68,8 +74,9 @@ public class Limits implements IPlugin {
                 }
             }
         });
+        unhookList.add(unhook);
 
-        XposedHelpers.findAndHookMethod(HookParams.getInstance().MMActivityClassName, lpparam.classLoader, "onCreateOptionsMenu", Menu.class, new XC_MethodHook() {
+        unhook = XposedHelpers.findAndHookMethod(HookParams.getInstance().MMActivityClassName, classLoader, "onCreateOptionsMenu", Menu.class, new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) {
 
@@ -131,8 +138,9 @@ public class Limits implements IPlugin {
                 }
             }
         });
+        unhookList.add(unhook);
 
-        XposedHelpers.findAndHookMethod(HookParams.getInstance().SelectContactUIClassName, lpparam.classLoader, "onActivityResult", int.class, int.class, Intent.class, new XC_MethodHook() {
+        unhook = XposedHelpers.findAndHookMethod(HookParams.getInstance().SelectContactUIClassName, classLoader, "onActivityResult", int.class, int.class, Intent.class, new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) {
                 try {
@@ -152,8 +160,9 @@ public class Limits implements IPlugin {
                 }
             }
         });
+        unhookList.add(unhook);
 
-        XposedHelpers.findAndHookMethod(HookParams.getInstance().SelectConversationUIClassName, lpparam.classLoader, HookParams.getInstance().SelectConversationUICheckLimitMethod, boolean.class, new XC_MethodHook() {
+        unhook = XposedHelpers.findAndHookMethod(HookParams.getInstance().SelectConversationUIClassName, classLoader, HookParams.getInstance().SelectConversationUICheckLimitMethod, boolean.class, new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(XC_MethodHook.MethodHookParam param) {
                 try {
@@ -167,6 +176,7 @@ public class Limits implements IPlugin {
 
             }
         });
+        unhookList.add(unhook);
     }
 
     private final void onSelectContactUISelectAll(Activity activity, boolean isChecked) {

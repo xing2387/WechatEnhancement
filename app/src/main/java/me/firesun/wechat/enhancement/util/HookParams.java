@@ -11,7 +11,7 @@ public class HookParams {
     public String SQLiteDatabaseInsertMethod = "insert";
     public String SQLiteDatabaseDeleteMethod = "delete";
     public final String ContactInfoUIClassName = "com.tencent.mm.plugin.profile.ui.ContactInfoUI";
-                                          //com.tencent.mm.plugin.profile.ui.ContactInfoUI
+    //com.tencent.mm.plugin.profile.ui.ContactInfoUI
 
     public String ContactInfoClassName;
     public String ChatroomInfoUIClassName = "com.tencent.mm.plugin.chatroom.ui.ChatroomInfoUI";
@@ -43,7 +43,13 @@ public class HookParams {
 
     private static HookParams instance = null;
 
+    private ClassLoader classLoader;
+
     private HookParams() {
+    }
+
+    public void setClassLoader(ClassLoader classLoader) {
+        this.classLoader = classLoader;
     }
 
     public static HookParams getInstance() {
@@ -58,6 +64,10 @@ public class HookParams {
 
     public static boolean hasInstance() {
         return instance != null;
+    }
+
+    public boolean sameClassLoader(ClassLoader classLoader) {
+        return this.classLoader == classLoader;
     }
 
 }

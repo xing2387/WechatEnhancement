@@ -14,9 +14,16 @@ import me.firesun.wechat.enhancement.util.HookParams;
 
 
 public class HideModule implements IPlugin {
+    private static final List<XC_MethodHook.Unhook> unhookList = new ArrayList<>();
+
     @Override
-    public void hook(XC_LoadPackage.LoadPackageParam lpparam) {
-        XposedHelpers.findAndHookMethod("android.app.ApplicationPackageManager", lpparam.classLoader, "getInstalledApplications", int.class, new XC_MethodHook() {
+    public void hook(final XC_LoadPackage.LoadPackageParam lpparam, final ClassLoader classLoader) {
+        for (XC_MethodHook.Unhook unhook : unhookList) {
+            unhook.unhook();
+        }
+        unhookList.clear();
+
+        XC_MethodHook.Unhook unhook = XposedHelpers.findAndHookMethod("android.app.ApplicationPackageManager", classLoader, "getInstalledApplications", int.class, new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) {
                 try {
@@ -35,8 +42,9 @@ public class HideModule implements IPlugin {
 
             }
         });
+        unhookList.add(unhook);
 
-        XposedHelpers.findAndHookMethod("android.app.ApplicationPackageManager", lpparam.classLoader, "getInstalledPackages", int.class, new XC_MethodHook() {
+        unhook = XposedHelpers.findAndHookMethod("android.app.ApplicationPackageManager", classLoader, "getInstalledPackages", int.class, new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) {
                 try {
@@ -54,8 +62,9 @@ public class HideModule implements IPlugin {
                 }
             }
         });
+        unhookList.add(unhook);
 
-        XposedHelpers.findAndHookMethod("android.app.ApplicationPackageManager", lpparam.classLoader, "getPackageInfo", String.class, int.class, new XC_MethodHook() {
+        unhook = XposedHelpers.findAndHookMethod("android.app.ApplicationPackageManager", classLoader, "getPackageInfo", String.class, int.class, new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) {
                 try {
@@ -67,8 +76,9 @@ public class HideModule implements IPlugin {
                 }
             }
         });
+        unhookList.add(unhook);
 
-        XposedHelpers.findAndHookMethod("android.app.ApplicationPackageManager", lpparam.classLoader, "getApplicationInfo", String.class, int.class, new XC_MethodHook() {
+        unhook = XposedHelpers.findAndHookMethod("android.app.ApplicationPackageManager", classLoader, "getApplicationInfo", String.class, int.class, new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) {
                 try {
@@ -80,8 +90,9 @@ public class HideModule implements IPlugin {
                 }
             }
         });
+        unhookList.add(unhook);
 
-        XposedHelpers.findAndHookMethod("android.app.ActivityManager", lpparam.classLoader, "getRunningServices", int.class, new XC_MethodHook() {
+        unhook = XposedHelpers.findAndHookMethod("android.app.ActivityManager", classLoader, "getRunningServices", int.class, new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) {
                 try {
@@ -99,8 +110,9 @@ public class HideModule implements IPlugin {
                 }
             }
         });
+        unhookList.add(unhook);
 
-        XposedHelpers.findAndHookMethod("android.app.ActivityManager", lpparam.classLoader, "getRunningTasks", int.class, new XC_MethodHook() {
+        unhook = XposedHelpers.findAndHookMethod("android.app.ActivityManager", classLoader, "getRunningTasks", int.class, new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) {
                 try {
@@ -118,8 +130,9 @@ public class HideModule implements IPlugin {
                 }
             }
         });
+        unhookList.add(unhook);
 
-        XposedHelpers.findAndHookMethod("android.app.ActivityManager", lpparam.classLoader, "getRunningAppProcesses", new XC_MethodHook() {
+        unhook = XposedHelpers.findAndHookMethod("android.app.ActivityManager", classLoader, "getRunningAppProcesses", new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) {
                 try {
@@ -137,6 +150,7 @@ public class HideModule implements IPlugin {
                 }
             }
         });
+        unhookList.add(unhook);
     }
 
 }

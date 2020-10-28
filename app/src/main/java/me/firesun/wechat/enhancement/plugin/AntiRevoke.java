@@ -4,8 +4,10 @@ import android.content.ContentValues;
 
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import de.robv.android.xposed.XC_MethodHook;
@@ -19,9 +21,15 @@ public class AntiRevoke implements IPlugin {
     private static Map<Long, Object> msgCacheMap = new HashMap<>();
     private static Object storageInsertClazz;
 
+    private static final List<XC_MethodHook.Unhook> unhookList = new ArrayList<>();
+
     @Override
-    public void hook(XC_LoadPackage.LoadPackageParam lpparam) {
-        XposedHelpers.findAndHookMethod(HookParams.getInstance().SQLiteDatabaseClassName, lpparam.classLoader, HookParams.getInstance().SQLiteDatabaseUpdateMethod, String.class, ContentValues.class, String.class, String[].class, int.class, new XC_MethodHook() {
+    public void hook(final XC_LoadPackage.LoadPackageParam lpparam, final ClassLoader classLoader) {
+        for (XC_MethodHook.Unhook unhook : unhookList) {
+            unhook.unhook();
+        }
+        unhookList.clear();
+        XC_MethodHook.Unhook unhook = XposedHelpers.findAndHookMethod(HookParams.getInstance().SQLiteDatabaseClassName, classLoader, HookParams.getInstance().SQLiteDatabaseUpdateMethod, String.class, ContentValues.class, String.class, String[].class, int.class, new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) {
                 try {
@@ -37,7 +45,7 @@ public class AntiRevoke implements IPlugin {
                                 !contentValues.getAsString("content").equals("You've recalled a message") &&
                                 !contentValues.getAsString("content").startsWith("<sysmsg type=\"invokeMessage\"><invokeMessage><text><![CDATA[你撤回了一条消息]]") &&
                                 !contentValues.getAsString("content").startsWith("<sysmsg type=\"invokeMessage\"><invokeMessage><text><![CDATA[You've recalled a message]]")
-                                ) {
+                        ) {
 
                             handleMessageRecall(contentValues);
                             param.setResult(1);
@@ -47,8 +55,9 @@ public class AntiRevoke implements IPlugin {
                 }
             }
         });
+        unhookList.add(unhook);
 
-        XposedHelpers.findAndHookMethod(HookParams.getInstance().SQLiteDatabaseClassName, lpparam.classLoader, HookParams.getInstance().SQLiteDatabaseDeleteMethod, String.class, String.class, String[].class, new XC_MethodHook() {
+        unhook = XposedHelpers.findAndHookMethod(HookParams.getInstance().SQLiteDatabaseClassName, classLoader, HookParams.getInstance().SQLiteDatabaseDeleteMethod, String.class, String.class, String[].class, new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) {
                 try {
@@ -65,9 +74,10 @@ public class AntiRevoke implements IPlugin {
                 }
             }
         });
+        unhookList.add(unhook);
 
 
-        XposedHelpers.findAndHookMethod(File.class, "delete", new XC_MethodHook() {
+        unhook = XposedHelpers.findAndHookMethod(File.class, "delete", new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) {
                 try {
@@ -82,9 +92,10 @@ public class AntiRevoke implements IPlugin {
 
             }
         });
+        unhookList.add(unhook);
 
-        Class msgInfoClass = XposedHelpers.findClass(HookParams.getInstance().MsgInfoClassName, lpparam.classLoader);
-        XposedHelpers.findAndHookMethod(HookParams.getInstance().MsgInfoStorageClassName, lpparam.classLoader, HookParams.getInstance().MsgInfoStorageInsertMethod, msgInfoClass, boolean.class, new XC_MethodHook() {
+        Class msgInfoClass = XposedHelpers.findClass(HookParams.getInstance().MsgInfoClassName, classLoader);
+        unhook = XposedHelpers.findAndHookMethod(HookParams.getInstance().MsgInfoStorageClassName, classLoader, HookParams.getInstance().MsgInfoStorageInsertMethod, msgInfoClass, boolean.class, new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) {
                 try {
@@ -101,6 +112,7 @@ public class AntiRevoke implements IPlugin {
 
             }
         });
+        unhookList.add(unhook);
     }
 
     private void handleMessageRecall(ContentValues contentValues) {

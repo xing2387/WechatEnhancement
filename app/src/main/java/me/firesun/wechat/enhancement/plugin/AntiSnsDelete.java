@@ -2,7 +2,9 @@ package me.firesun.wechat.enhancement.plugin;
 
 import android.content.ContentValues;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedHelpers;
@@ -14,10 +16,17 @@ import static java.util.Arrays.copyOfRange;
 
 
 public class AntiSnsDelete implements IPlugin {
-    @Override
-    public void hook(XC_LoadPackage.LoadPackageParam lpparam) {
 
-        XposedHelpers.findAndHookMethod(HookParams.getInstance().SQLiteDatabaseClassName, lpparam.classLoader, HookParams.getInstance().SQLiteDatabaseUpdateMethod, String.class, ContentValues.class, String.class, String[].class, int.class, new XC_MethodHook() {
+    private static final List<XC_MethodHook.Unhook> unhookList = new ArrayList<>();
+
+    @Override
+    public void hook(final XC_LoadPackage.LoadPackageParam lpparam, final ClassLoader classLoader) {
+        for (XC_MethodHook.Unhook unhook : unhookList) {
+            unhook.unhook();
+        }
+        unhookList.clear();
+
+        XC_MethodHook.Unhook unhook = XposedHelpers.findAndHookMethod(HookParams.getInstance().SQLiteDatabaseClassName, classLoader, HookParams.getInstance().SQLiteDatabaseUpdateMethod, String.class, ContentValues.class, String.class, String[].class, int.class, new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) {
                 try {
@@ -47,6 +56,7 @@ public class AntiSnsDelete implements IPlugin {
 
             }
         });
+        unhookList.add(unhook);
 
     }
 

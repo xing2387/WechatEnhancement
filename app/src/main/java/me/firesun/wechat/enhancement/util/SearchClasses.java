@@ -26,14 +26,14 @@ public class SearchClasses {
     private static List<String> wxClasses = new ArrayList<>();
     private static XSharedPreferences preferencesInstance = null;
 
-    public static void init(Context context, XC_LoadPackage.LoadPackageParam lparam, String versionName) {
+    public static void init(Context context, XC_LoadPackage.LoadPackageParam lparam, ClassLoader classLoader, String versionName) {
 
         if (loadConfig(lparam, versionName))
             return;
 
         log("failed to load config, start finding...");
 
-        generateConfig(lparam.appInfo.sourceDir, lparam.classLoader, versionName);
+        generateConfig(lparam.appInfo.sourceDir, classLoader, versionName);
 
         saveConfig(context);
     }
