@@ -143,6 +143,7 @@ public class SearchClasses {
 
         } catch (Error | Exception e) {
             log("Search LuckMoney Classes Failed!");
+            log(e);
             throw e;
         }
 
@@ -157,6 +158,7 @@ public class SearchClasses {
                     .getName();
         } catch (Error | Exception e) {
             log("Search LuckMoney Classes Failed!");
+            log(e);
         }
 
 

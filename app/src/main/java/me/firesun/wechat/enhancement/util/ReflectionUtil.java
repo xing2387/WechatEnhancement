@@ -43,6 +43,18 @@ public final class ReflectionUtil {
         }
     }
 
+    public static void log(Throwable e) {
+        if (e == null) {
+            return;
+        }
+
+        if (xposedExist) {
+            XposedBridge.log(e);
+        } else {
+            Log.i("Xposed", "[WechatEnhancement] " + e.getMessage());
+        }
+    }
+
     public static Method findMethodsByExactParameters(Class clazz, Class returnType, Class... parameterTypes) {
         if (clazz == null) {
             return null;

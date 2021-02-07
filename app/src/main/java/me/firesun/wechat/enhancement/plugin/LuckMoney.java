@@ -134,7 +134,7 @@ public class LuckMoney implements IPlugin {
                         String wechatId = activity.getIntent().getStringExtra("Contact_User");
                         cmb.setText(wechatId);
                         Toast.makeText(activity, "微信ID:" + wechatId + "已复制到剪切板", LENGTH_LONG).show();
-//                        log(this.hashCode() + " ContactInfoUIClassName: " + wechatId);
+                        log(this.hashCode() + " ContactInfoUIClassName: " + wechatId);
                     }
                 } catch (Error | Exception e) {
                     Log.e("ljx", "ContactInfoUIClassName: ", e);
@@ -154,7 +154,7 @@ public class LuckMoney implements IPlugin {
                         ClipboardManager cmb = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
                         cmb.setText(wechatId);
                         Toast.makeText(activity, "微信ID:" + wechatId + "已复制到剪切板", LENGTH_LONG).show();
-//                        Log.e("ljx", "ChatroomInfoUIClassName: " + wechatId);
+                        log("ChatroomInfoUIClassName: " + wechatId);
                     }
                 } catch (Error | Exception e) {
                     Log.e("ljx", "ChatroomInfoUIClassName: ", e);

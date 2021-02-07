@@ -12,8 +12,14 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.google.gson.Gson;
+
 import java.io.File;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.List;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
@@ -50,17 +56,62 @@ public class Main implements IXposedHookLoadPackage {
     };
     private static XC_MethodHook.Unhook appCreateUnHook = null;
 
+    private static void printMethods(Class c1) {
+        //获取当前类的所有方法
+        Method[] methods = c1.getDeclaredMethods();
+        for (Method m : methods) {
+            Class returnType = m.getReturnType();
+            StringBuilder sb = new StringBuilder();
+            String methodName = m.getName();
+            String modifiers = Modifier.toString(m.getModifiers());
+            if (modifiers.length() > 0) {
+                sb.append("  " + modifiers + " ");
+            }
+            sb.append(returnType.getName() + " " + methodName + "(");
+
+            //打印方法参数
+            Class[] paramTypes = m.getParameterTypes();
+            for (int i = 0; i < paramTypes.length; i++) {
+                if (i > 0) {
+                    sb.append(",");
+                }
+                sb.append(paramTypes[i].getName());
+            }
+            sb.append(");");
+            log(sb.toString());
+        }
+    }
+
     @Override
     public void handleLoadPackage(final LoadPackageParam lpparam) {
 
         if (!lpparam.packageName.equals(HookParams.WECHAT_PACKAGE_NAME)) {
             return;
         }
-
+        log("wechat.enhancement 3");
         try {
             Class clazz = XposedHelpers.findClass("com.tencent.tinker.loader.NewClassLoaderInjector", lpparam.classLoader);
-            Method method = XposedHelpers.findMethodBestMatch(clazz, "inject", Application.class,
-                    ClassLoader.class, File.class, Boolean.class, List.class);
+            printMethods(clazz);
+            Method method = null;
+            try {
+                method = XposedHelpers.findMethodBestMatch(clazz, "inject", Application.class,
+                        ClassLoader.class, File.class, "boolean", List.class);
+            } catch (Throwable e) {
+                log(e.getMessage());
+            }
+            if (method == null) {
+                try {
+                    method = XposedHelpers.findMethodBestMatch(clazz, "inject", Application.class,
+                            ClassLoader.class, File.class, List.class);
+                } catch (Throwable e) {
+                    log(e.getMessage());
+                }
+            }
+            if (method == null) {
+                log("NewClassLoaderInjector.inject method not found");
+                return;
+            }
+
             XposedBridge.hookMethod(method, new XC_MethodHook() {
 
                 @Override
@@ -72,6 +123,8 @@ public class Main implements IXposedHookLoadPackage {
                     log("doHook after inject ClassLoader: " + param.getResult());
                     Context context = (Context) param.args[0];
                     doHook(context, lpparam, (ClassLoader) param.getResult());
+//                    Log.d(TAG, " NewClassLoaderInjector hookDbOpen: ");
+//                    hookDbOpen((ClassLoader) param.getResult());
                 }
             });
 
@@ -89,6 +142,8 @@ public class Main implements IXposedHookLoadPackage {
                         log("doHook  callApplicationOnCreate ClassLoader: " + lpparam.classLoader);
                         Context context = (Context) param.args[0];
                         doHook(context, lpparam, lpparam.classLoader);
+//                        Log.d(TAG, " callApplicationOnCreate hookDbOpen: ");
+//                        hookDbOpen(lpparam.classLoader);
                     }
                 });
 
@@ -128,6 +183,37 @@ public class Main implements IXposedHookLoadPackage {
             } catch (Error | Exception e) {
                 log("loadPlugins error" + e);
             }
+        }
+    }
+
+    private void hookDbOpen(ClassLoader classLoader) {
+        try {
+            Log.d(TAG, "handleLoadPackage: hook com.tencent.wcdb.database.SQLiteConnectionPool ");
+            Class database = XposedHelpers.findClass("com.tencent.wcdb.database.SQLiteDatabase", classLoader);
+            Class dbConfig = XposedHelpers.findClass("com.tencent.wcdb.database.SQLiteDatabaseConfiguration", classLoader);
+            Class dbCipherSpec = XposedHelpers.findClass("com.tencent.wcdb.database.SQLiteCipherSpec", classLoader);
+            XposedHelpers.findAndHookMethod("com.tencent.wcdb.database.SQLiteConnectionPool", classLoader,
+                    "open",
+                    database, dbConfig, byte[].class, dbCipherSpec, int.class,
+                    new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                            super.beforeHookedMethod(param);
+                            byte[] array = (byte[]) param.args[2];
+                            for (int i = 0; i < array.length; i++) {
+                                Log.d(TAG, i + ": " + array[i]);
+                            }
+                            Log.d(TAG, "wx db: " + new String(array));
+                        }
+
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                            super.afterHookedMethod(param);
+                        }
+                    });
+
+        } catch (Exception e) {
+            Log.e(TAG, "handleLoadPackage: ", e);
         }
     }
 
