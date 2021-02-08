@@ -21,22 +21,22 @@ public class ADBlock implements IPlugin {
         }
         unhookList.clear();
 
-        XC_MethodHook.Unhook unhook = XposedHelpers.findAndHookMethod(HookParams.getInstance().XMLParserClassName, classLoader,
-                HookParams.getInstance().XMLParserMethod, String.class, String.class, new XC_MethodHook() {
-                    @Override
-                    protected void beforeHookedMethod(MethodHookParam param) {
-                        try {
-                            if (!PreferencesUtils.isADBlock())
-                                return;
-
-                            if (param.args[1].equals("ADInfo"))
-                                param.setResult(null);
-                        } catch (Error | Exception e) {
-                        }
-
-                    }
-                });
-        unhookList.add(unhook);
+//        XC_MethodHook.Unhook unhook = XposedHelpers.findAndHookMethod(HookParams.getInstance().XMLParserClassName, classLoader,
+//                HookParams.getInstance().XMLParserMethod, String.class, String.class, new XC_MethodHook() {
+//                    @Override
+//                    protected void beforeHookedMethod(MethodHookParam param) {
+//                        try {
+//                            if (!PreferencesUtils.isADBlock())
+//                                return;
+//
+//                            if (param.args[1].equals("ADInfo"))
+//                                param.setResult(null);
+//                        } catch (Error | Exception e) {
+//                        }
+//
+//                    }
+//                });
+//        unhookList.add(unhook);
     }
 
 }

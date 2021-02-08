@@ -25,6 +25,8 @@ import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 import me.firesun.wechat.enhancement.PreferencesUtils;
 import me.firesun.wechat.enhancement.util.HookParams;
+import me.firesun.wechat.enhancement.util.ReflectionUtil;
+import me.firesun.wechat.enhancement.util.SearchClasses;
 import me.firesun.wechat.enhancement.util.XmlToJson;
 
 import static android.text.TextUtils.isEmpty;
@@ -51,6 +53,7 @@ public class LuckMoney implements IPlugin {
         }
         unhookList.clear();
 
+
         XC_MethodHook.Unhook unhook = XposedHelpers.findAndHookMethod(HookParams.getInstance().SQLiteDatabaseClassName,
                 classLoader, HookParams.getInstance().SQLiteDatabaseInsertMethod,
                 String.class, String.class, ContentValues.class, new XC_MethodHook() {
@@ -66,16 +69,39 @@ public class LuckMoney implements IPlugin {
                             if (null == type) {
                                 return;
                             }
+//                            log("hook SQLiteDatabase " + type + ", " + contentValues);
                             if (type == 436207665 || type == 469762097) {
                                 handleLuckyMoney(contentValues, lpparam, classLoader);
                             } else if (type == 419430449) {
                                 handleTransfer(contentValues, lpparam, classLoader);
                             }
                         } catch (Error | Exception e) {
+                            log(e);
                         }
                     }
                 });
         unhookList.add(unhook);
+
+//        Class receiveLuckyMoneyRequestClass = XposedHelpers.findClass(HookParams.getInstance().ReceiveLuckyMoneyRequestClassName, classLoader);
+//        ReflectionUtil.printMethods(receiveLuckyMoneyRequestClass);
+//        unhook = XposedHelpers.findAndHookConstructor(receiveLuckyMoneyRequestClass, "int", String.class,
+//                String.class, "int", String.class, String.class, new XC_MethodHook() {
+//                    @Override
+//                    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+//                        log("receiveLuckyMoneyRequestClass arg0 " + param.args[0]);
+//                        log("receiveLuckyMoneyRequestClass arg1 " + param.args[1]);
+//                        log("receiveLuckyMoneyRequestClass arg2 " + param.args[2]);
+//                        log("receiveLuckyMoneyRequestClass arg3 " + param.args[3]);
+//                        log("receiveLuckyMoneyRequestClass arg4 " + param.args[4]);
+//                        log("receiveLuckyMoneyRequestClass arg5 " + param.args[5]);
+//                    }
+//
+//                    @Override
+//                    protected void afterHookedMethod(MethodHookParam param) {
+//                    }
+//                });
+//        unhookList.add(unhook);
+
 
         unhook = XposedHelpers.findAndHookMethod(HookParams.getInstance().ReceiveLuckyMoneyRequestClassName, classLoader, HookParams.getInstance().ReceiveLuckyMoneyRequestMethod, int.class, String.class, JSONObject.class, new XC_MethodHook() {
             @Override
@@ -166,12 +192,11 @@ public class LuckMoney implements IPlugin {
     }
 
     private void handleLuckyMoney(ContentValues contentValues, XC_LoadPackage.LoadPackageParam lpparam, ClassLoader classLoader) throws XmlPullParserException, IOException, JSONException {
+//        log("PreferencesUtils.open() " + PreferencesUtils.open());
         if (!PreferencesUtils.open()) {
             return;
         }
-//        if (contentValues != null) {
-//            log("红包数据:" + contentValues.toString());
-//        }
+//        log("红包数据:" + contentValues);
 
 //        Log.d("ljx", "handleLuckyMoney " + contentValues.toString());
         int status = contentValues.getAsInteger("status");
@@ -191,7 +216,7 @@ public class LuckMoney implements IPlugin {
             chatRoom = String.valueOf(talker);
             talker = content.substring(0, content.indexOf(":"));
         }
-//        Log.d("ljx", "handleLuckyMoney: talker " + talker + ", isChatroom " + isChatroom);
+//        Log.d("ljx", "handleLuckyMoney: talker " + talker + ", isChatroom " + chatRoom);
 
 
         String blackList = PreferencesUtils.blackList();
@@ -237,6 +262,7 @@ public class LuckMoney implements IPlugin {
 //        log("getJSONObject(\"wcpayinfo\")");
         JSONObject wcpayinfo = new XmlToJson.Builder(content).build()
                 .getJSONObject("msg").getJSONObject("appmsg").getJSONObject("wcpayinfo");
+//        log("handleLuckyMoney: wcpayinfo   " + wcpayinfo);
         String senderTitle = wcpayinfo.getString("sendertitle");
         String notContainsWords = PreferencesUtils.notContains();
         if (!isEmpty(notContainsWords)) {
@@ -255,23 +281,29 @@ public class LuckMoney implements IPlugin {
         int channelId = Integer.parseInt(nativeUrl.getQueryParameter("channelid"));
         String sendId = nativeUrl.getQueryParameter("sendid");
 
-//        log("findClass(HookParams.getInstance().NetworkRequestClassName " + classLoader);
+//        log("handleLuckyMoney: NetworkRequestClassName " + HookParams.getInstance().NetworkRequestClassName);
         Class networkRequestClass = XposedHelpers.findClass(HookParams.getInstance().NetworkRequestClassName, classLoader);
         requestCaller = callStaticMethod(networkRequestClass, HookParams.getInstance().GetNetworkByModelMethod);
 
-//        log("findClass(HookParams.getInstance().ReceiveLuckyMoneyRequestClassName");
-        Class receiveLuckyMoneyRequestClass = XposedHelpers.findClass(HookParams.getInstance().ReceiveLuckyMoneyRequestClassName, classLoader);
         if (HookParams.getInstance().hasTimingIdentifier) {
-            callMethod(requestCaller, HookParams.getInstance().RequestCallerMethod, newInstance(receiveLuckyMoneyRequestClass, channelId, sendId, nativeUrlString, 0, "v1.0"), 0);
+//            log("handleLuckyMoney: ReceiveLuckyMoneyRequestClassName " + HookParams.getInstance().ReceiveLuckyMoneyRequestClassName);
+            Class receiveLuckyMoneyRequestClass = XposedHelpers.findClass(HookParams.getInstance().ReceiveLuckyMoneyRequestClassName, classLoader);
+            if (SearchClasses.getVersionNum(HookParams.getInstance().versionName) >= SearchClasses.getVersionNum("8.0.0")) {
+                callMethod(requestCaller, HookParams.getInstance().RequestCallerMethod,
+                        newInstance(receiveLuckyMoneyRequestClass, channelId, sendId, nativeUrlString, 0, "v1.0", chatRoom), 0);
+            } else {
+                callMethod(requestCaller, HookParams.getInstance().RequestCallerMethod,
+                        newInstance(receiveLuckyMoneyRequestClass, channelId, sendId, nativeUrlString, 0, "v1.0"), 0);
+            }
             luckyMoneyMessages.add(new LuckyMoneyMessage(msgType, channelId, sendId, nativeUrlString, talker));
 //            log("handleLuckyMoney: hasTimingIdentifier return");
             return;
         }
-//        log("findClass(HookParams.getInstance().LuckyMoneyRequestClassName");
+//        log("handleLuckyMoney: LuckyMoneyRequestClassName " + HookParams.getInstance().LuckyMoneyRequestClassName);
         Class luckyMoneyRequestClass = XposedHelpers.findClass(HookParams.getInstance().LuckyMoneyRequestClassName, classLoader);
         Object luckyMoneyRequest = newInstance(luckyMoneyRequestClass,
                 msgType, channelId, sendId, nativeUrlString, "", "", talker, "v1.0");
-//        log("luckyMoneyRequest " + classLoader);
+//        log("handleLuckyMoney: luckyMoneyRequest " + luckyMoneyRequest);
         callMethod(requestCaller, HookParams.getInstance().RequestCallerMethod, luckyMoneyRequest, getDelayTime());
     }
 

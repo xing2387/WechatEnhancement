@@ -142,22 +142,32 @@ public class SearchClasses {
                     .getName();
 
         } catch (Error | Exception e) {
-            log("Search LuckMoney Classes Failed!");
+            log("Search LuckMoney Classes Failed!11");
             log(e);
             throw e;
         }
 
         //ADBlock
         try {
-            Class XMLParserClass = ReflectionUtil.findClassesFromPackage(classLoader, wxClasses, "com.tencent.mm.sdk.platformtools", 0)
-                    .filterByMethod(Map.class, String.class, String.class)
-                    .firstOrNull();
-            hp.XMLParserClassName = XMLParserClass.getName();
+            if (versionNum >= getVersionNum("8.0.0")) {
+                Class XMLParserClass = ReflectionUtil.findClassesFromPackage(classLoader, wxClasses, "com.tencent.mm.sdk.platformtools", 0)
+                        .filterByMethod(Map.class, String.class, String.class, String.class)
+                        .firstOrNull();
+                hp.XMLParserClassName = XMLParserClass.getName();
 
-            hp.XMLParserMethod = ReflectionUtil.findMethodsByExactParameters(XMLParserClass, Map.class, String.class, String.class)
-                    .getName();
+                hp.XMLParserMethod = ReflectionUtil.findMethodsByExactParameters(XMLParserClass, Map.class, String.class, String.class, String.class)
+                        .getName();
+            } else {
+                Class XMLParserClass = ReflectionUtil.findClassesFromPackage(classLoader, wxClasses, "com.tencent.mm.sdk.platformtools", 0)
+                        .filterByMethod(Map.class, String.class, String.class)
+                        .firstOrNull();
+                hp.XMLParserClassName = XMLParserClass.getName();
+
+                hp.XMLParserMethod = ReflectionUtil.findMethodsByExactParameters(XMLParserClass, Map.class, String.class, String.class)
+                        .getName();
+            }
         } catch (Error | Exception e) {
-            log("Search LuckMoney Classes Failed!");
+            log("Search ADBlock Classes Failed!22");
             log(e);
         }
 
@@ -207,7 +217,7 @@ public class SearchClasses {
         }
     }
 
-    private static int getVersionNum(String version) {
+    public static int getVersionNum(String version) {
         String[] v = version.split("\\.");
         if (v.length == 3)
             return Integer.valueOf(v[0]) * 100 * 100 + Integer.valueOf(v[1]) * 100 + Integer.valueOf(v[2]);

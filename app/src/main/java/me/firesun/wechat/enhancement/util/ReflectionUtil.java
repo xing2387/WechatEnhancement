@@ -320,7 +320,7 @@ public final class ReflectionUtil {
         }
     }
 
-    private static void printMethods(Class c1) {
+    public static void printMethods(Class c1) {
         //获取当前类的所有方法
         Method[] methods = c1.getDeclaredMethods();
         for (Method m : methods) {
@@ -342,7 +342,7 @@ public final class ReflectionUtil {
                 sb.append(paramTypes[i].getName());
             }
             sb.append(");");
-            log(sb.toString());
+            XposedBridge.log("printMethods " + c1.getSimpleName() + ": " + sb.toString());
         }
     }
 }
