@@ -56,55 +56,19 @@ public class Main implements IXposedHookLoadPackage {
     };
     private static XC_MethodHook.Unhook appCreateUnHook = null;
 
-    private static void printMethods(Class c1) {
-        //获取当前类的所有方法
-        Method[] methods = c1.getDeclaredMethods();
-        for (Method m : methods) {
-            Class returnType = m.getReturnType();
-            StringBuilder sb = new StringBuilder();
-            String methodName = m.getName();
-            String modifiers = Modifier.toString(m.getModifiers());
-            if (modifiers.length() > 0) {
-                sb.append("  " + modifiers + " ");
-            }
-            sb.append(returnType.getName() + " " + methodName + "(");
-
-            //打印方法参数
-            Class[] paramTypes = m.getParameterTypes();
-            for (int i = 0; i < paramTypes.length; i++) {
-                if (i > 0) {
-                    sb.append(",");
-                }
-                sb.append(paramTypes[i].getName());
-            }
-            sb.append(");");
-            log(sb.toString());
-        }
-    }
-
     @Override
     public void handleLoadPackage(final LoadPackageParam lpparam) {
 
         if (!lpparam.packageName.equals(HookParams.WECHAT_PACKAGE_NAME)) {
             return;
         }
-        log("wechat.enhancement 3");
         try {
             Class clazz = XposedHelpers.findClass("com.tencent.tinker.loader.NewClassLoaderInjector", lpparam.classLoader);
-            printMethods(clazz);
             Method method = null;
-            try {
-                method = XposedHelpers.findMethodBestMatch(clazz, "inject", Application.class,
-                        ClassLoader.class, File.class, "boolean", List.class);
-            } catch (Throwable e) {
-                log(e.getMessage());
-            }
-            if (method == null) {
-                try {
-                    method = XposedHelpers.findMethodBestMatch(clazz, "inject", Application.class,
-                            ClassLoader.class, File.class, List.class);
-                } catch (Throwable e) {
-                    log(e.getMessage());
+            for (Method m : clazz.getDeclaredMethods()) {
+                if ("inject".equals(m.getName())) {
+                    method = m;
+                    break;
                 }
             }
             if (method == null) {

@@ -7,6 +7,7 @@ import net.dongliu.apk.parser.bean.DexClass;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -15,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 
 import de.robv.android.xposed.XposedBridge;
+
+import static de.robv.android.xposed.XposedBridge.log;
 
 public final class ReflectionUtil {
 
@@ -314,6 +317,32 @@ public final class ReflectionUtil {
                 }
             }
             return this.classes.get(0);
+        }
+    }
+
+    private static void printMethods(Class c1) {
+        //获取当前类的所有方法
+        Method[] methods = c1.getDeclaredMethods();
+        for (Method m : methods) {
+            Class returnType = m.getReturnType();
+            StringBuilder sb = new StringBuilder();
+            String methodName = m.getName();
+            String modifiers = Modifier.toString(m.getModifiers());
+            if (modifiers.length() > 0) {
+                sb.append("  " + modifiers + " ");
+            }
+            sb.append(returnType.getName() + " " + methodName + "(");
+
+            //打印方法参数
+            Class[] paramTypes = m.getParameterTypes();
+            for (int i = 0; i < paramTypes.length; i++) {
+                if (i > 0) {
+                    sb.append(",");
+                }
+                sb.append(paramTypes[i].getName());
+            }
+            sb.append(");");
+            log(sb.toString());
         }
     }
 }
